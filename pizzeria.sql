@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 13-10-2021 a las 19:02:48
+-- Tiempo de generación: 14-10-2021 a las 18:01:21
 -- Versión del servidor: 10.4.19-MariaDB
 -- Versión de PHP: 8.0.7
 
@@ -20,8 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `pizzeria`
 --
-CREATE DATABASE IF NOT EXISTS `pizzeria` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE `pizzeria`;
 
 -- --------------------------------------------------------
 
@@ -76,7 +74,8 @@ CREATE TABLE `empleado` (
   `apellidos` varchar(255) NOT NULL,
   `nif` varchar(9) NOT NULL,
   `telefono` decimal(9,0) NOT NULL,
-  `opcion_trabajo_id` int(11) NOT NULL
+  `opcion_trabajo_id` int(11) NOT NULL,
+  `tienda_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -149,7 +148,8 @@ CREATE TABLE `pedidos` (
   `opcion_reparto_id` int(11) NOT NULL,
   `cantidad` decimal(4,0) NOT NULL,
   `precio_total` int(11) NOT NULL,
-  `tienda_id` int(11) NOT NULL
+  `tienda_id` int(11) NOT NULL,
+  `cliente_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -163,7 +163,9 @@ CREATE TABLE `producto` (
   `nombre` int(11) NOT NULL,
   `descripcion` varchar(255) NOT NULL,
   `imagen` varchar(255) NOT NULL,
-  `precio` decimal(10,2) NOT NULL
+  `precio` decimal(10,2) NOT NULL,
+  `pedido_id` int(11) NOT NULL,
+  `categoria_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -238,6 +240,18 @@ INSERT INTO `provincia` (`id_provincia`, `descripcion`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `reparto_domicilio`
+--
+
+CREATE TABLE `reparto_domicilio` (
+  `id_reparto_domicilio` int(11) NOT NULL,
+  `empleado_id` int(11) NOT NULL,
+  `fecha_hora_entrega` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `tienda`
 --
 
@@ -271,7 +285,9 @@ ALTER TABLE `cliente`
 -- Indices de la tabla `empleado`
 --
 ALTER TABLE `empleado`
-  ADD KEY `opcion_trabajo_id` (`opcion_trabajo_id`);
+  ADD PRIMARY KEY (`id_empleado`),
+  ADD KEY `opcion_trabajo_id` (`opcion_trabajo_id`),
+  ADD KEY `tienda_id` (`tienda_id`);
 
 --
 -- Indices de la tabla `localidad`
@@ -297,19 +313,29 @@ ALTER TABLE `opcion_trabajo`
 ALTER TABLE `pedidos`
   ADD PRIMARY KEY (`id_pedidos`),
   ADD KEY `opcion_reparto_id` (`opcion_reparto_id`),
-  ADD KEY `tienda_id` (`tienda_id`);
+  ADD KEY `tienda_id` (`tienda_id`),
+  ADD KEY `cliente_id` (`cliente_id`);
 
 --
 -- Indices de la tabla `producto`
 --
 ALTER TABLE `producto`
-  ADD PRIMARY KEY (`id_producto`);
+  ADD PRIMARY KEY (`id_producto`),
+  ADD KEY `pedido_id` (`pedido_id`),
+  ADD KEY `categoria_id` (`categoria_id`);
 
 --
 -- Indices de la tabla `provincia`
 --
 ALTER TABLE `provincia`
   ADD PRIMARY KEY (`id_provincia`);
+
+--
+-- Indices de la tabla `reparto_domicilio`
+--
+ALTER TABLE `reparto_domicilio`
+  ADD PRIMARY KEY (`id_reparto_domicilio`),
+  ADD KEY `empleado_id` (`empleado_id`);
 
 --
 -- Indices de la tabla `tienda`
@@ -334,6 +360,12 @@ ALTER TABLE `categoria_pizza`
 --
 ALTER TABLE `cliente`
   MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `empleado`
+--
+ALTER TABLE `empleado`
+  MODIFY `id_empleado` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `localidad`
@@ -372,6 +404,12 @@ ALTER TABLE `provincia`
   MODIFY `id_provincia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
+-- AUTO_INCREMENT de la tabla `reparto_domicilio`
+--
+ALTER TABLE `reparto_domicilio`
+  MODIFY `id_reparto_domicilio` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `tienda`
 --
 ALTER TABLE `tienda`
@@ -392,14 +430,29 @@ ALTER TABLE `cliente`
 -- Filtros para la tabla `empleado`
 --
 ALTER TABLE `empleado`
-  ADD CONSTRAINT `empleado_ibfk_1` FOREIGN KEY (`opcion_trabajo_id`) REFERENCES `opcion_trabajo` (`id_opcion_trabajo`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+  ADD CONSTRAINT `empleado_ibfk_1` FOREIGN KEY (`opcion_trabajo_id`) REFERENCES `opcion_trabajo` (`id_opcion_trabajo`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  ADD CONSTRAINT `empleado_ibfk_2` FOREIGN KEY (`tienda_id`) REFERENCES `tienda` (`id_tienda`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 --
 -- Filtros para la tabla `pedidos`
 --
 ALTER TABLE `pedidos`
   ADD CONSTRAINT `pedidos_ibfk_1` FOREIGN KEY (`opcion_reparto_id`) REFERENCES `opcion_reparto` (`id_opcion_reparto`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  ADD CONSTRAINT `pedidos_ibfk_2` FOREIGN KEY (`tienda_id`) REFERENCES `tienda` (`id_tienda`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+  ADD CONSTRAINT `pedidos_ibfk_2` FOREIGN KEY (`tienda_id`) REFERENCES `tienda` (`id_tienda`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  ADD CONSTRAINT `pedidos_ibfk_3` FOREIGN KEY (`cliente_id`) REFERENCES `cliente` (`id_cliente`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+--
+-- Filtros para la tabla `producto`
+--
+ALTER TABLE `producto`
+  ADD CONSTRAINT `producto_ibfk_1` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id_pedidos`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `producto_ibfk_2` FOREIGN KEY (`categoria_id`) REFERENCES `categoria_pizza` (`id_categoria`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `reparto_domicilio`
+--
+ALTER TABLE `reparto_domicilio`
+  ADD CONSTRAINT `reparto_domicilio_ibfk_1` FOREIGN KEY (`empleado_id`) REFERENCES `empleado` (`id_empleado`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 --
 -- Filtros para la tabla `tienda`
